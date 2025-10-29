@@ -11,12 +11,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- Firebase - يفضل استخدام أحدث الإصدارات التي استخدمتها في mine.js -->
-  <!-- لا تحتاج لتضمين هذه السكربتات إذا كنت تستوردها مباشرة في mine.js باستخدام URL -->
-  <!--
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js"></script>
-  -->
+  <!-- إضافة Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body { background: #f8f9fa; padding: 30px; }
@@ -25,6 +21,21 @@
     input { width: 100%; text-align: center; border: none; background: transparent; }
     tfoot td { font-weight: bold; background: #eee; }
     .btn-primary { background: #6f42c1; border: none; }
+    /* إضافة بعض التنسيق لعنصر الكانفاس للرسم البياني */
+    .chart-container {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 30px;
+        margin-bottom: 20px;
+        /* لجعل الرسم البياني متجاوبًا مع العرض */
+        position: relative;
+        height:40vh; /* ارتفاع تقريبي */
+        width: 100%; /* عرض كامل للحاوية */
+        max-width: 900px; /* لتحديد أقصى عرض للرسم البياني */
+        margin-left: auto;
+        margin-right: auto;
+    }
   </style>
 </head>
 <body>
@@ -44,7 +55,7 @@
     </div>
 
     <div class="table-responsive">
-      <table class="table table-bordered text-center align-middle" id="mainTable"> <!-- تغيير ID الجدول هنا -->
+      <table class="table table-bordered text-center align-middle" id="mainTable">
         <thead>
           <tr>
             <th>اليوم</th>
@@ -79,11 +90,16 @@
       </table>
     </div>
 
-    <div class="text-center mt-4 d-flex justify-content-center gap-3"> <!-- تعديل هنا لإظهار الأزرار بجانب بعضها -->
+    <!-- مكان الرسم البياني -->
+    <div class="chart-container">
+        <canvas id="profitChart"></canvas>
+    </div>
+
+    <div class="text-center mt-4 d-flex justify-content-center gap-3">
       <button id="exportExcel" class="btn btn-primary">
         📥 تحميل ملف Excel
       </button>
-      <button id="exportPDF" class="btn btn-primary"> <!-- إضافة زر PDF هنا -->
+      <button id="exportPDF" class="btn btn-primary">
         📥 تحميل ملف PDF
       </button>
     </div>
