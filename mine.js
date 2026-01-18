@@ -1,3 +1,4 @@
+// ✅ استيراد Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, collection
@@ -16,6 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ---------------------- الإعدادات والمتغيرات --------------------------
 
 const monthSelect = document.getElementById("monthSelect");
 const weekSelect = document.getElementById("weekSelect");
@@ -23,18 +25,32 @@ const tableBody = document.getElementById("tableBody");
 const daysNames = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 let profitChart;
 
+// دالة مساعدة لتحويل التاريخ لنص YYYY-MM-DD بدون مشاكل التوقيت العالمي
+function formatDateLocal(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+// ---------------------- منطق التواريخ --------------------------
 
 function getSaturdaysInMonth(year, month) {
     const saturdays = [];
+    // بداية الشهر المختار
     let date = new Date(year, month, 1);
     
+    // العودة للخلف حتى نجد أول يوم سبت (يوم 6 هو السبت في JS)
     while (date.getDay() !== 6) {
         date.setDate(date.getDate() - 1);
     }
 
-    for (let i = 0; i < 5; i++) {
+    // جمع 5 أو 6 أسابيع لتغطية الشهر بالكامل
+    for (let i = 0; i < 6; i++) {
         saturdays.push(new Date(date));
         date.setDate(date.getDate() + 7);
+        // توقف إذا دخلنا في شهر بعيد جداً (اختياري)
+        if (i === 4 && date.getMonth() !== month && date.getMonth() !== (month + 1) % 12) break;
     }
     return saturdays;
 }
@@ -44,6 +60,7 @@ function setupSelectors() {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
+    monthSelect.innerHTML = "";
     for (let m = 0; m < 12; m++) {
         const opt = document.createElement("option");
         opt.value = m;
@@ -52,32 +69,48 @@ function setupSelectors() {
         monthSelect.appendChild(opt);
     }
 
-    updateWeekOptions();
+    updateWeekOptions(true); // true تعني "حاول اختيار الأسبوع الحالي"
 }
 
-function updateWeekOptions() {
+function updateWeekOptions(shouldSelectCurrent = false) {
     const year = new Date().getFullYear();
     const month = parseInt(monthSelect.value);
     const saturdays = getSaturdaysInMonth(year, month);
+    const todayStr = formatDateLocal(new Date());
 
     weekSelect.innerHTML = "";
-    saturdays.forEach((sat) => {
+    let selectedIndex = 0;
+
+    saturdays.forEach((sat, index) => {
         const endOfWeek = new Date(sat);
         endOfWeek.setDate(sat.getDate() + 6);
         
         const opt = document.createElement("option");
-        const val = sat.toISOString().split('T')[0];
+        const val = formatDateLocal(sat); 
         opt.value = val;
         opt.textContent = `من ${sat.getDate()}/${sat.getMonth()+1} إلى ${endOfWeek.getDate()}/${endOfWeek.getMonth()+1}`;
+        
+        // لو بنحمل الصفحة لأول مرة، نختار الأسبوع اللي فيه تاريخ النهاردة
+        if (shouldSelectCurrent) {
+            const satStr = formatDateLocal(sat);
+            const endStr = formatDateLocal(endOfWeek);
+            if (todayStr >= satStr && todayStr <= endStr) {
+                selectedIndex = index;
+            }
+        }
+
         weekSelect.appendChild(opt);
     });
     
+    weekSelect.selectedIndex = selectedIndex;
     loadData();
 }
 
 function createTableRows() {
     tableBody.innerHTML = "";
-    const startDate = new Date(weekSelect.value);
+    // تجنب مشاكل الـ String date عن طريق التقسيم اليدوي
+    const [y, m, d] = weekSelect.value.split('-').map(Number);
+    const startDate = new Date(y, m - 1, d);
 
     daysNames.forEach((name, index) => {
         const currentDate = new Date(startDate);
@@ -145,47 +178,59 @@ function calculateAll() {
     updateChart(totals);
 }
 
+// ---------------------- الحفظ والتحميل --------------------------
 
 async function saveData() {
-    const weekId = weekSelect.value; // تاريخ السبت
+    const weekId = weekSelect.value;
     const rows = Array.from(document.querySelectorAll("#tableBody tr")).map(row => ({
         income: row.querySelector(".income").value || "0",
         mainExp: row.querySelector(".main-exp").value || "0",
         mainNote: row.querySelector(".main-note").value || "",
         subExp: row.querySelector(".sub-exp").value || "0",
         subNote: row.querySelector(".sub-note").value || "",
-        driverPercent: row.querySelector(".driver-percent").value || "30"
+        driverPercent: row.querySelector(".driver-percent").value || "33"
     }));
 
-    await setDoc(doc(db, "continuous_weeks", weekId), { rows, updatedAt: new Date() });
+    try {
+        await setDoc(doc(db, "continuous_weeks", weekId), { rows, updatedAt: new Date() });
+    } catch (e) {
+        console.error("Error saving: ", e);
+    }
 }
 
 async function loadData() {
-    createTableRows(); // إعادة بناء الصفوف بتواريخها الجديدة
+    createTableRows(); 
     const weekId = weekSelect.value;
     const docRef = doc(db, "continuous_weeks", weekId);
-    const snap = await getDoc(docRef);
-    const rows = document.querySelectorAll("#tableBody tr");
+    
+    try {
+        const snap = await getDoc(docRef);
+        const rows = document.querySelectorAll("#tableBody tr");
 
-    if (snap.exists()) {
-        const data = snap.data().rows || [];
-        data.forEach((item, i) => {
-            if (rows[i]) {
-                rows[i].querySelector(".income").value = item.income;
-                rows[i].querySelector(".main-exp").value = item.mainExp;
-                rows[i].querySelector(".main-note").value = item.mainNote;
-                rows[i].querySelector(".sub-exp").value = item.subExp;
-                rows[i].querySelector(".sub-note").value = item.subNote;
-                rows[i].querySelector(".driver-percent").value = item.driverPercent;
-            }
-        });
+        if (snap.exists()) {
+            const data = snap.data().rows || [];
+            data.forEach((item, i) => {
+                if (rows[i]) {
+                    rows[i].querySelector(".income").value = item.income;
+                    rows[i].querySelector(".main-exp").value = item.mainExp;
+                    rows[i].querySelector(".main-note").value = item.mainNote;
+                    rows[i].querySelector(".sub-exp").value = item.subExp;
+                    rows[i].querySelector(".sub-note").value = item.subNote;
+                    rows[i].querySelector(".driver-percent").value = item.driverPercent;
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Error loading: ", e);
     }
     calculateAll();
 }
 
 // ---------------------- الرسم البياني --------------------------
 function updateChart(totalsData) {
-    const ctx = document.getElementById('profitChart').getContext('2d');
+    const canvas = document.getElementById('profitChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     const chartLabels = ['إجمالي الدخل', 'المصروفات', 'صافي الربح', 'نصيب السائق', 'ربحك النهائي'];
     const chartValues = [totalsData.income, totalsData.all, totalsData.net, totalsData.driver, totalsData.final];
 
@@ -212,7 +257,7 @@ function updateChart(totalsData) {
 
 setupSelectors();
 
-monthSelect.addEventListener("change", updateWeekOptions);
+monthSelect.addEventListener("change", () => updateWeekOptions(false));
 weekSelect.addEventListener("change", loadData);
 
 let saveTimeout;
@@ -224,8 +269,7 @@ document.addEventListener("input", e => {
     }
 });
 
-// تصدير ملفات (Excel/PDF) - تبقى كما هي مع تغيير طفيف في الاسم
 document.getElementById("exportExcel").addEventListener("click", () => {
     const wb = XLSX.utils.table_to_book(document.getElementById("mainTable"));
-    XLSX.writeFile(wb, `تقرير_اسبوع_${weekSelect.value}.xlsx`);
+    XLSX.writeFile(wb, `تقرير_${weekSelect.value}.xlsx`);
 });
