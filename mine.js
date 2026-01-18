@@ -1,4 +1,3 @@
-// ✅ استيراد Firebase (نفس الإعدادات السابقة)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, collection
@@ -17,7 +16,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ---------------------- الإعدادات والمتغيرات --------------------------
 
 const monthSelect = document.getElementById("monthSelect");
 const weekSelect = document.getElementById("weekSelect");
@@ -25,20 +23,15 @@ const tableBody = document.getElementById("tableBody");
 const daysNames = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 let profitChart;
 
-// ---------------------- منطق التواريخ الجديد --------------------------
 
-// وظيفة لجلب أول يوم سبت في الشهر أو قبله (بداية أول أسبوع يلمس الشهر)
 function getSaturdaysInMonth(year, month) {
     const saturdays = [];
     let date = new Date(year, month, 1);
     
-    // العودة للخلف حتى نجد أول يوم سبت (يوم 6 في JS هو السبت)
     while (date.getDay() !== 6) {
         date.setDate(date.getDate() - 1);
     }
 
-    // جمع كل أيام السبت التي تبدأ أسابيع تتقاطع مع هذا الشهر
-    // سنجمع 5 أسابيع لضمان تغطية الشهر بالكامل
     for (let i = 0; i < 5; i++) {
         saturdays.push(new Date(date));
         date.setDate(date.getDate() + 7);
@@ -51,7 +44,6 @@ function setupSelectors() {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
-    // ملء الشهور
     for (let m = 0; m < 12; m++) {
         const opt = document.createElement("option");
         opt.value = m;
@@ -74,7 +66,6 @@ function updateWeekOptions() {
         endOfWeek.setDate(sat.getDate() + 6);
         
         const opt = document.createElement("option");
-        // القيمة ستكون تاريخ السبت (YYYY-MM-DD) كمعرف فريد للأسبوع
         const val = sat.toISOString().split('T')[0];
         opt.value = val;
         opt.textContent = `من ${sat.getDate()}/${sat.getMonth()+1} إلى ${endOfWeek.getDate()}/${endOfWeek.getMonth()+1}`;
@@ -154,7 +145,6 @@ function calculateAll() {
     updateChart(totals);
 }
 
-// ---------------------- الحفظ والتحميل (Firebase) --------------------------
 
 async function saveData() {
     const weekId = weekSelect.value; // تاريخ السبت
@@ -167,7 +157,6 @@ async function saveData() {
         driverPercent: row.querySelector(".driver-percent").value || "30"
     }));
 
-    // الحفظ في كولكشن مستقل للأسابيع لسهولة الوصول
     await setDoc(doc(db, "continuous_weeks", weekId), { rows, updatedAt: new Date() });
 }
 
