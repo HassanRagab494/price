@@ -21,33 +21,26 @@
     input { width: 100%; text-align: center; border: none; background: transparent; }
     tfoot td { font-weight: bold; background: #eee; }
     .btn-primary { background: #6f42c1; border: none; }
-    /* إضافة بعض التنسيق لعنصر الكانفاس للرسم البياني */
     .chart-container {
         background: white;
         padding: 20px;
         border-radius: 10px;
         margin-top: 30px;
         margin-bottom: 20px;
-        /* لجعل الرسم البياني متجاوبًا مع العرض */
         position: relative;
-        height:40vh; /* ارتفاع تقريبي */
-        width: 100%; /* عرض كامل للحاوية */
-        max-width: 900px; /* لتحديد أقصى عرض للرسم البياني */
+        height:40vh; 
+        width: 100%;
+        max-width: 900px; 
         margin-left: auto;
         margin-right: auto;
     }
   </style>
 </head>
 <body>
-
   <div class="container">
-    <h2 class="text-center mb-4">📊 تتبع أرباح السيارة - شهري / أسبوعي</h2>
-
-   <!-- في ملف HTML، استبدل جزء الـ selects بهذا -->
 <div class="d-flex justify-content-center gap-3 mb-4">
   <select id="monthSelect" class="form-select w-auto text-center"></select>
   <select id="weekSelect" class="form-select w-auto text-center">
-      <!-- سيتم ملئه بواسطة JavaScript -->
   </select>
 </div>
 
@@ -86,23 +79,18 @@
         </tfoot>
       </table>
     </div>
-
-    <!-- مكان الرسم البياني -->
     <div class="chart-container">
         <canvas id="profitChart"></canvas>
     </div>
-
     <div class="text-center mt-4 d-flex justify-content-center gap-3">
       <button id="exportExcel" class="btn btn-primary">
-        📥 تحميل ملف Excel
+         تحميل ملف Excel
       </button>
       <button id="exportPDF" class="btn btn-primary">
-        📥 تحميل ملف PDF
+         تحميل ملف PDF
       </button>
     </div>
   </div>
-
-  <!-- ملف mine.js يتم تحميله كوحدة بعد تحميل DOM بالكامل -->
   <script type="module" src="mine.js" defer></script>
 </body>
 </html>
